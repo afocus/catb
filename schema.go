@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"reflect"
 )
@@ -153,26 +151,6 @@ func (r *Route) getResponseNode() map[string]any {
 			"list": []any{ret},
 		},
 	}
-}
-
-func (p *Parse) BuildDoc() []byte {
-	collects := make([]any, 0)
-	for _, v := range p.routes {
-		c := v.toCollectMap()
-		collects = append(collects, c)
-	}
-	doc := map[string]any{
-		"apicat":      "2.0",
-		"info":        map[string]any{},
-		"servers":     []any{},
-		"definitions": map[string]any{"schemas": p.defs},
-		"collections": collects,
-	}
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetIndent("", "  ")
-	_ = enc.Encode(doc)
-	return buf.Bytes()
 }
 
 var routeMethodSigErr = errors.New("路由方法签名错误 必须是func(*gin.Context,*struct)(*struct,error)")

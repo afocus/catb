@@ -163,49 +163,46 @@ func (p *Parse) parseRoutes(v *ast.InterfaceType, obj *RouteGroup) error {
 		}
 		r.Description = strings.Join(cs, "\n")
 		sigerr := fmt.Errorf("%v %s", routeMethodSigErr, fullname)
-		{
-			// 处理请求入参
-			if tt.Params.NumFields() != 2 {
-				return sigerr
-			}
-			inexp, ok := tt.Params.List[1].Type.(*ast.StarExpr)
-			if !ok {
-				return sigerr
-			}
-			paramName := p.quickGetType(inexp.X)
-			r.Proto.In = paramName
-			if paramName != "ginrpc.Empty" {
-				if o := p.lookupStruct(paramName); o != nil {
-					r.Paramas = p.parseRequestParam(o)
-					if r.Method != http.MethodGet {
-						// 非get请求尝试解析请求体body
-						// fmt.Println(paramName, o)
-						r.Content = p.structToJschema(o, paramName)
-					}
+
+		// 处理请求入参
+		if tt.Params.NumFields() != 2 {
+			return sigerr
+		}
+		inexp, ok := tt.Params.List[1].Type.(*ast.StarExpr)
+		if !ok {
+			return sigerr
+		}
+		paramName := p.quickGetType(inexp.X)
+		r.Proto.In = paramName
+		if paramName != "ginrpc.Empty" {
+			if o := p.lookupStruct(paramName); o != nil {
+				r.Paramas = p.parseRequestParam(o)
+				if r.Method != http.MethodGet {
+					// 非get请求尝试解析请求体body
+					// fmt.Println(paramName, o)
+					r.Content = p.structToJschema(o, paramName)
 				}
 			}
 		}
 
-		{
-			// 处理响应
-			if tt.Results.NumFields() != 2 {
-				return sigerr
-			}
-			re, ok := tt.Results.List[0].Type.(*ast.StarExpr)
-			if !ok {
-				return sigerr
-			}
+		// 处理响应
+		if tt.Results.NumFields() != 2 {
+			return sigerr
+		}
+		re, ok := tt.Results.List[0].Type.(*ast.StarExpr)
+		if !ok {
+			return sigerr
+		}
 
-			resultname := p.quickGetType(re.X)
-			r.Proto.Out = resultname
-			if m := resultname; m != "ginrpc.Empty" {
-				if o := p.lookupStruct(m); o != nil {
-					r.Response = p.structToJschema(o, m)
-				}
+		resultname := p.quickGetType(re.X)
+		r.Proto.Out = resultname
+		if m := resultname; m != "ginrpc.Empty" {
+			if o := p.lookupStruct(m); o != nil {
+				r.Response = p.structToJschema(o, m)
 			}
-			if p.quickGetType(tt.Results.List[1].Type) != "error" {
-				return sigerr
-			}
+		}
+		if p.quickGetType(tt.Results.List[1].Type) != "error" {
+			return sigerr
 		}
 		obj.Routes[routeName] = &r
 	}
